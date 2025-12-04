@@ -1,5 +1,5 @@
-from .app import create_app
-from .app.db import Base, engine
+from app import create_app
+from app.db import Base, engine
 
 
 app = create_app()

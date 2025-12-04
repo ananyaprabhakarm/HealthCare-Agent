@@ -11,7 +11,6 @@ SessionLocal = scoped_session(sessionmaker(autocommit=False, autoflush=False, bi
 
 Base = declarative_base()
 
-
 def get_db():
     db = SessionLocal()
     try:
