@@ -4,3 +4,12 @@ sqlalchemy
 psycopg2-binary
 pydantic
 email-validator
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-generativeai
+sendgrid
+requests
+twilio
+python-dotenv

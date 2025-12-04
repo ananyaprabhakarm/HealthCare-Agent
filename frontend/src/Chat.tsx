@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState, useCallback } from "react";
 
 type Message = {
   id: string;
@@ -20,49 +20,127 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function send(e: FormEvent) {
-    e.preventDefault();
-    if (!input.trim()) return;
-    const optimisticMessage: Message = { id: crypto.randomUUID(), sender: "user", content: input };
-    setMessages(prev => [...prev, optimisticMessage]);
-    setLoading(true);
-    try {
+  const sendMessageToBackend = useCallback(
+    async (content: string) => {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: sessionId, message: input, user_email: userEmail })
+        body: JSON.stringify({
+          session_id: sessionId,
+          message: content,
+          user_email: userEmail
+        })
       });
-      const data = await res.json();
-      setSessionId(data.session_id);
+
+      if (!res.ok) {
+        throw new Error("Backend error");
+      }
+      return res.json();
+    },
+    [endpoint, sessionId, userEmail]
+  );
+
+  async function send(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed) return;
+
+    const optimisticMessage: Message = {
+      id: crypto.randomUUID(),
+      sender: "user",
+      content: trimmed
+    };
+    setMessages(prev => [...prev, optimisticMessage]);
+    setLoading(true);
+
+    try {
+      const data = await sendMessageToBackend(trimmed);
+
+      setSessionId(data.session_id || null);
       setMessages(
         data.messages.map((m: any) => ({
-          id: m.id,
+          id: m.id ?? crypto.randomUUID(),
           sender: m.sender,
           content: m.content
         }))
       );
       setInput("");
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          sender: "system",
+          content: "Something went wrong. Please try again."
+        }
+      ]);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: "960px", height: "70vh", borderRadius: "1.5rem", border: "1px solid #1f2937", background: "radial-gradient(circle at top, rgba(59,130,246,0.15), transparent 55%), #020617", overflow: "hidden", boxShadow: "0 24px 80px rgba(15,23,42,0.75)" }}>
-      <div style={{ padding: "1.25rem 1.5rem", borderBottom: "1px solid #111827", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: "0.9rem", color: "#9ca3af" }}>LLM-powered assistant with MCP-backed tools</div>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        maxWidth: "960px",
+        height: "70vh",
+        borderRadius: "1.5rem",
+        border: "1px solid #1f2937",
+        background:
+          "radial-gradient(circle at top, rgba(59,130,246,0.15), transparent 55%), #020617",
+        overflow: "hidden",
+        boxShadow: "0 24px 80px rgba(15,23,42,0.75)"
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: "1.25rem 1.5rem",
+          borderBottom: "1px solid #111827",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}
+      >
+        <div style={{ fontSize: "0.9rem", color: "#9ca3af" }}>
+          LLM-powered assistant with MCP-backed tools
+        </div>
+
         <div style={{ display: "flex", gap: "0.4rem", fontSize: "0.75rem", color: "#6b7280" }}>
-          <span style={{ padding: "0.2rem 0.5rem", borderRadius: "999px", background: "#020617", border: "1px solid #1e293b" }}>FastAPI</span>
-          <span style={{ padding: "0.2rem 0.5rem", borderRadius: "999px", background: "#020617", border: "1px solid #1e293b" }}>PostgreSQL</span>
-          <span style={{ padding: "0.2rem 0.5rem", borderRadius: "999px", background: "#020617", border: "1px solid #1e293b" }}>MCP</span>
+          {["FastAPI", "PostgreSQL", "MCP"].map(tag => (
+            <span
+              key={tag}
+              style={{
+                padding: "0.2rem 0.5rem",
+                borderRadius: "999px",
+                background: "#020617",
+                border: "1px solid #1e293b"
+              }}
+            >
+              {tag}
+            </span>
+          ))}
         </div>
       </div>
-      <div style={{ flex: 1, padding: "1rem 1.5rem", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+
+      {/* Messages */}
+      <div
+        style={{
+          flex: 1,
+          padding: "1rem 1.5rem",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "0.75rem"
+        }}
+      >
         {messages.map(m => (
           <div key={m.id} style={{ display: "flex", justifyContent: m.sender === "user" ? "flex-end" : "flex-start" }}>
             <div
@@ -87,6 +165,7 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
             </div>
           </div>
         ))}
+
         {loading && (
           <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>
             Agent is thinking and possibly calling tools<span style={{ fontSize: "1.2em" }}>...</span>
@@ -94,13 +173,34 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
         )}
         <div ref={bottomRef} />
       </div>
-      <form onSubmit={send} style={{ padding: "1rem 1.5rem", borderTop: "1px solid #111827", display: "flex", gap: "0.75rem", alignItems: "center", background: "linear-gradient(to top,rgba(15,23,42,0.95),transparent)" }}>
+
+      {/* Input box */}
+      <form
+        onSubmit={send}
+        style={{
+          padding: "1rem 1.5rem",
+          borderTop: "1px solid #111827",
+          display: "flex",
+          gap: "0.75rem",
+          alignItems: "center",
+          background: "linear-gradient(to top,rgba(15,23,42,0.95),transparent)"
+        }}
+      >
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder={placeholder}
-          style={{ flex: 1, background: "#020617", borderRadius: "999px", border: "1px solid #1f2937", padding: "0.7rem 1rem", fontSize: "0.9rem", color: "#e5e7eb" }}
+          style={{
+            flex: 1,
+            background: "#020617",
+            borderRadius: "999px",
+            border: "1px solid #1f2937",
+            padding: "0.7rem 1rem",
+            fontSize: "0.9rem",
+            color: "#e5e7eb"
+          }}
         />
+
         <button
           type="submit"
           disabled={loading}
@@ -122,5 +222,3 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
     </div>
   );
 }
-
-
