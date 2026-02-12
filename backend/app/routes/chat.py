@@ -131,7 +131,7 @@ def chat_patient(payload: ChatRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(assistant_message)
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session.id).order_by(ChatMessage.created_at.asc()).all()
-    return ChatResponse(session_id=session.id, messages=[ChatMessageSchema.from_orm(m) for m in messages])
+    return ChatResponse(session_id=session.id, messages=[ChatMessageSchema.model_validate(m) for m in messages])
 
 
 @router.post("/doctor", response_model=ChatResponse)
@@ -227,6 +227,4 @@ def chat_doctor(payload: ChatRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(assistant_message)
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session.id).order_by(ChatMessage.created_at.asc()).all()
-    return ChatResponse(session_id=session.id, messages=[ChatMessageSchema.from_orm(m) for m in messages])
-
-
+    return ChatResponse(session_id=session.id, messages=[ChatMessageSchema.model_validate(m) for m in messages])

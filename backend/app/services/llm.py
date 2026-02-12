@@ -1,5 +1,6 @@
 import os
 import json
+from pyexpat import model
 import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -174,17 +175,21 @@ class LLMClient:
         
         try:
             if GEMINI_AVAILABLE and hasattr(self, 'gemini_model_name'):
-                model_config = {
-                    "temperature": 0.7,
-                }
-                if gemini_tools:
-                    model_config["tools"] = [{"function_declarations": gemini_tools}]
+                # model_config = {
+                #     "temperature": 0.7,
+                # }
+                # if gemini_tools:
+                #     model_config["tools"] = [{"function_declarations": gemini_tools}]
                 
+                # model = genai.GenerativeModel(
+                #     model_name=self.gemini_model_name,
+                #     **model_config
+                # )
+
                 model = genai.GenerativeModel(
-                    model_name=self.gemini_model_name,
-                    **model_config
-                )
-                
+                   model_name=self.gemini_model_name
+               )
+
                 system_instruction = "You are a helpful assistant for a doctor appointment system. Use the provided tools to help users book appointments and check availability."
                 
                 last_user_message = None
