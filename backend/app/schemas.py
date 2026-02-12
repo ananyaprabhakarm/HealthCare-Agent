@@ -2,27 +2,25 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class ChatMessageSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: UUID
     sender: str
     content: str
     created_at: datetime
 
-    class Config:
-        orm_mode = True
-
 
 class ChatSessionSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: UUID
     user_role: str
     created_at: datetime
     last_active_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class ChatRequest(BaseModel):

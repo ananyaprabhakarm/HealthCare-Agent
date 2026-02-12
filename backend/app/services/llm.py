@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    import google.generativeai as genai
+    import google.genai as genai
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
@@ -17,11 +17,11 @@ except ImportError:
 
 class LLMClient:
     def __init__(self):
-        self.model = os.getenv("LLM_MODEL", "gemini-pro")
+        self.model = os.getenv("LLM_MODEL", "gemini-1.5-flash")
         self.api_key = os.getenv("LLM_API_KEY", "GEMINI_API_KEY")
-        self.enabled = bool(self.api_key)
-        if GEMINI_AVAILABLE and self.api_key:
-            genai.configure(api_key=self.api_key)
+        self.enabled = bool(self.api_key and self.api_key != "GEMINI_API_KEY")
+        if GEMINI_AVAILABLE and self.enabled:
+            genai.api_key = self.api_key
             if self.model.startswith("models/"):
                 self.gemini_model_name = self.model
             elif self.model.startswith("gemini"):
@@ -30,7 +30,7 @@ class LLMClient:
                 self.gemini_model_name = f"models/gemini-{self.model}"
         else:
             if not GEMINI_AVAILABLE:
-                print("Warning: google-generativeai not installed. Install with: pip install google-generativeai")
+                print("Warning: google-genai not installed. Install with: pip install google-genai")
             self.enabled = False
 
     def _format_tools_for_gemini(self, tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -174,86 +174,91 @@ class LLMClient:
         gemini_tools = self._format_tools_for_gemini(tools) if tools else []
         
         try:
-            if GEMINI_AVAILABLE and hasattr(self, 'gemini_model_name'):
-                # model_config = {
-                #     "temperature": 0.7,
-                # }
-                # if gemini_tools:
-                #     model_config["tools"] = [{"function_declarations": gemini_tools}]
-                
-                # model = genai.GenerativeModel(
-                #     model_name=self.gemini_model_name,
-                #     **model_config
-                # )
+            if GEMINI_AVAILABLE and self.enabled and hasattr(self, 'gemini_model_name'):
+                try:
+                    model = genai.GenerativeModel(
+                       model_name=self.gemini_model_name
+                   )
 
-                model = genai.GenerativeModel(
-                   model_name=self.gemini_model_name
-               )
-
-                system_instruction = "You are a helpful assistant for a doctor appointment system. Use the provided tools to help users book appointments and check availability."
-                
-                last_user_message = None
-                gemini_history = []
-                
-                for i, msg in enumerate(formatted_messages):
-                    role = msg.get("role", "user")
-                    content = msg.get("content", "")
+                    system_instruction = "You are a helpful assistant for a doctor appointment system. Use the provided tools to help users book appointments and check availability."
                     
-                    if role == "user":
-                        last_user_message = content
-                        gemini_history.append({"role": "user", "parts": [content]})
-                    elif role == "assistant":
-                        gemini_history.append({"role": "model", "parts": [content]})
-                    elif role == "tool":
-                        try:
-                            tool_result = json.loads(content) if isinstance(content, str) else content
-                            function_name = msg.get("tool_call_id", "").replace("gemini-", "").replace("fallback-", "")
-                            if not function_name:
-                                function_name = "unknown"
-                            
-                            function_response = genai.protos.FunctionResponse(
-                                name=function_name,
-                                response=tool_result
-                            )
-                            gemini_history.append({
-                                "role": "function",
-                                "parts": [function_response]
-                            })
-                        except Exception as e:
-                            print(f"Error formatting tool response for Gemini: {e}")
-                
-                if last_user_message is None:
-                    last_user_message = formatted_messages[-1].get("content", "") if formatted_messages else ""
-                
-                chat = model.start_chat(history=gemini_history[:-1] if len(gemini_history) > 1 and gemini_history[-1].get("role") == "user" else gemini_history)
-                response = chat.send_message(last_user_message)
-                
-                content = ""
-                tool_calls = []
-                
-                if response.candidates and len(response.candidates) > 0:
-                    candidate = response.candidates[0]
-                    if candidate.content and candidate.content.parts:
-                        for part in candidate.content.parts:
-                            if hasattr(part, 'text') and part.text:
-                                content += part.text
-                            elif hasattr(part, 'function_call'):
-                                func_call = part.function_call
-                                args_dict = {}
-                                if hasattr(func_call, 'args') and func_call.args:
-                                    for key, value in func_call.args.items():
-                                        args_dict[key] = value
-                                tool_calls.append({
-                                    "id": f"gemini-{len(tool_calls)}",
-                                    "function": {
-                                        "name": func_call.name,
-                                        "arguments": json.dumps(args_dict)
-                                    }
-                                })
-                
-                return {"content": content, "tool_calls": tool_calls}
+                    last_user_message = None
+                    gemini_history = []
+                    
+                    for i, msg in enumerate(formatted_messages):
+                        role = msg.get("role", "user")
+                        content = msg.get("content", "")
+                        
+                        if role == "user":
+                            last_user_message = content
+                            gemini_history.append({"role": "user", "parts": [content]})
+                        elif role == "assistant":
+                            gemini_history.append({"role": "model", "parts": [content]})
+                        elif role == "tool":
+                            try:
+                                tool_result = json.loads(content) if isinstance(content, str) else content
+                                function_name = msg.get("tool_call_id", "").replace("gemini-", "").replace("fallback-", "")
+                                if not function_name:
+                                    function_name = "unknown"
+                                
+                                try:
+                                    function_response = genai.protos.FunctionResponse(
+                                        name=function_name,
+                                        response=tool_result
+                                    )
+                                    gemini_history.append({
+                                        "role": "function",
+                                        "parts": [function_response]
+                                    })
+                                except:
+                                    pass
+                            except Exception as e:
+                                print(f"Error formatting tool response for Gemini: {e}")
+                    
+                    if last_user_message is None:
+                        last_user_message = formatted_messages[-1].get("content", "") if formatted_messages else ""
+                    
+                    chat = model.start_chat(history=gemini_history[:-1] if len(gemini_history) > 1 and gemini_history[-1].get("role") == "user" else gemini_history)
+                    response = chat.send_message(last_user_message)
+                    
+                    content = ""
+                    tool_calls = []
+                    
+                    if response.candidates and len(response.candidates) > 0:
+                        candidate = response.candidates[0]
+                        if candidate.content and candidate.content.parts:
+                            for part in candidate.content.parts:
+                                if hasattr(part, 'text') and part.text:
+                                    content += part.text
+                                elif hasattr(part, 'function_call'):
+                                    func_call = part.function_call
+                                    args_dict = {}
+                                    if hasattr(func_call, 'args') and func_call.args:
+                                        for key, value in func_call.args.items():
+                                            args_dict[key] = value
+                                    tool_calls.append({
+                                        "id": f"gemini-{len(tool_calls)}",
+                                        "function": {
+                                            "name": func_call.name,
+                                            "arguments": json.dumps(args_dict)
+                                        }
+                                    })
+                    
+                    return {"content": content, "tool_calls": tool_calls}
+                except Exception as api_error:
+                    import traceback
+                    error_msg = str(api_error)
+                    print(f"Gemini API error: {error_msg}")
+                    print(traceback.format_exc())
+                    # Fallback to simple parser if API fails
+                    last_user_message = next((m.get("content", "") for m in reversed(formatted_messages) if m.get("role") == "user"), "")
+                    if tools and last_user_message:
+                        fallback_result = self._simple_fallback_parser(last_user_message)
+                        if fallback_result.get("tool_calls"):
+                            return fallback_result
+                    return {"content": f"API Error: {error_msg}. Using fallback response.", "tool_calls": []}
             else:
-                return {"content": "Gemini API is not properly configured. Please check your LLM_API_KEY settings and ensure google-generativeai is installed.", "tool_calls": []}
+                return {"content": "Gemini API is not properly configured. Please check your LLM_API_KEY settings and ensure google-genai is installed.", "tool_calls": []}
         except Exception as e:
             import traceback
             error_msg = str(e)

@@ -131,10 +131,8 @@ def chat_patient(payload: ChatRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(assistant_message)
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session.id).order_by(ChatMessage.created_at.asc()).all()
+    logger.info(f"✓ Patient chat completed: session_id={session.id}, message_count={len(messages)}")
     return ChatResponse(session_id=session.id, messages=[ChatMessageSchema.model_validate(m) for m in messages])
-
-
-@router.post("/doctor", response_model=ChatResponse)
 def chat_doctor(payload: ChatRequest, db: Session = Depends(get_db)):
     logger.info(f"👨‍⚕️ Doctor chat request: session_id={payload.session_id}, message_length={len(payload.message) if payload.message else 0}")
     if not payload.message:
@@ -227,4 +225,5 @@ def chat_doctor(payload: ChatRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(assistant_message)
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session.id).order_by(ChatMessage.created_at.asc()).all()
+    logger.info(f"✓ Doctor chat completed: session_id={session.id}, message_count={len(messages)}")
     return ChatResponse(session_id=session.id, messages=[ChatMessageSchema.model_validate(m) for m in messages])
