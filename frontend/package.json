@@ -8,14 +8,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "fdir": "^6.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/react": "^19.2.8",
     "@vitejs/plugin-react": "^4.3.3",
-    "vite": "^6.0.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vite": "^7.3.1"
   }
 }
-
-

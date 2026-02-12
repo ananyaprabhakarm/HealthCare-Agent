@@ -3,6 +3,9 @@ import json
 import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
+
+load_dotenv()
 
 try:
     import google.generativeai as genai
@@ -14,7 +17,7 @@ except ImportError:
 class LLMClient:
     def __init__(self):
         self.model = os.getenv("LLM_MODEL", "gemini-pro")
-        self.api_key = os.getenv("LLM_API_KEY", "")
+        self.api_key = os.getenv("LLM_API_KEY", "GEMINI_API_KEY")
         self.enabled = bool(self.api_key)
         if GEMINI_AVAILABLE and self.api_key:
             genai.configure(api_key=self.api_key)

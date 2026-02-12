@@ -1,6 +1,7 @@
 from typing import List
 from uuid import UUID
 import json
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,10 +16,12 @@ from ..services.calendar import CalendarClient
 from ..services.email import EmailClient
 
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 def execute_tool_call(tool_name: str, arguments: dict, db: Session, calendar_client: CalendarClient, email_client: EmailClient) -> dict:
+    logger.info(f"🔧 Executing tool: {tool_name} with arguments: {arguments}")
     try:
         if tool_name == "get_doctor_availability":
             result = get_doctor_availability(
@@ -41,13 +44,16 @@ def execute_tool_call(tool_name: str, arguments: dict, db: Session, calendar_cli
             result = create_appointment(db, payload, calendar_client, email_client)
             return {"success": True, "result": result.dict()}
         else:
+            logger.warning(f"⚠️ Unknown tool requested: {tool_name}")
             return {"success": False, "error": f"Unknown tool: {tool_name}"}
     except Exception as e:
+        logger.error(f"❌ Tool execution failed for {tool_name}: {str(e)}", exc_info=True)
         return {"success": False, "error": str(e)}
 
 
 @router.post("/patient", response_model=ChatResponse)
 def chat_patient(payload: ChatRequest, db: Session = Depends(get_db)):
+    logger.info(f"👤 Patient chat request: session_id={payload.session_id}, message_length={len(payload.message) if payload.message else 0}")
     if not payload.message:
         raise HTTPException(status_code=400, detail="Message required")
     session: ChatSession | None = None
@@ -58,6 +64,7 @@ def chat_patient(payload: ChatRequest, db: Session = Depends(get_db)):
         db.add(session)
         db.commit()
         db.refresh(session)
+        logger.info(f"📝 Created new patient session: {session.id}")
     user_message = ChatMessage(session_id=session.id, sender="user", content=payload.message)
     db.add(user_message)
     db.commit()
@@ -80,11 +87,13 @@ def chat_patient(payload: ChatRequest, db: Session = Depends(get_db)):
     final_response = None
     llm_result = None
     while iteration < max_iterations:
+        logger.debug(f"🔄 Patient chat iteration {iteration + 1}/{max_iterations}")
         llm_result = llm.chat(messages_context, tools, db)
         tool_calls = llm_result.get("tool_calls", [])
         content = llm_result.get("content", "")
         if not tool_calls:
             final_response = content if content else "I'm here to help. Could you please rephrase your request?"
+            logger.debug("✓ Patient chat completed without tool calls")
             break
         for tool_call in tool_calls:
             tool_name = tool_call.get("function", {}).get("name", "")
@@ -127,6 +136,7 @@ def chat_patient(payload: ChatRequest, db: Session = Depends(get_db)):
 
 @router.post("/doctor", response_model=ChatResponse)
 def chat_doctor(payload: ChatRequest, db: Session = Depends(get_db)):
+    logger.info(f"👨‍⚕️ Doctor chat request: session_id={payload.session_id}, message_length={len(payload.message) if payload.message else 0}")
     if not payload.message:
         raise HTTPException(status_code=400, detail="Message required")
     session: ChatSession | None = None
@@ -137,6 +147,7 @@ def chat_doctor(payload: ChatRequest, db: Session = Depends(get_db)):
         db.add(session)
         db.commit()
         db.refresh(session)
+        logger.info(f"📝 Created new doctor session: {session.id}")
     user_message = ChatMessage(session_id=session.id, sender="user", content=payload.message)
     db.add(user_message)
     db.commit()
@@ -159,11 +170,13 @@ def chat_doctor(payload: ChatRequest, db: Session = Depends(get_db)):
     final_response = None
     llm_result = None
     while iteration < max_iterations:
+        logger.debug(f"🔄 Doctor chat iteration {iteration + 1}/{max_iterations}")
         llm_result = llm.chat(messages_context, tools, db)
         tool_calls = llm_result.get("tool_calls", [])
         content = llm_result.get("content", "")
         if not tool_calls:
             final_response = content if content else "I'm here to help. Could you please rephrase your request?"
+            logger.debug("✓ Doctor chat completed without tool calls")
             break
         notification_client = NotificationClient()
         for tool_call in tool_calls:

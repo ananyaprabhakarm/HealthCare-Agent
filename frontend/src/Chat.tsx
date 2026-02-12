@@ -91,7 +91,7 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
         width: "100%",
         maxWidth: "960px",
         height: "70vh",
-        borderRadius: "1.5rem",
+        borderRadius: "2.5rem",
         border: "1px solid #1f2937",
         background:
           "radial-gradient(circle at top, rgba(59,130,246,0.15), transparent 55%), #020617",
