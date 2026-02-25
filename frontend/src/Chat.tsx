@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useRef, useState, useCallback } from "react";
+import { apiUrl } from "./api";
 
 type Message = {
   id: string;
@@ -25,7 +26,7 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
 
   const sendMessageToBackend = useCallback(
     async (content: string) => {
-      const res = await fetch(endpoint, {
+      const res = await fetch(apiUrl(endpoint), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

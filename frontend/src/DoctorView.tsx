@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Chat } from "./Chat";
+import { apiUrl } from "./api";
 
 type Summary = {
   doctor_name: string;
@@ -16,7 +17,7 @@ export function DoctorView() {
   async function requestSummary(timeframe: string) {
     setLoading(true);
     try {
-      const res = await fetch("/api/doctor/summary", {
+      const res = await fetch(apiUrl("/api/doctor/summary"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ doctor_email: email, timeframe })

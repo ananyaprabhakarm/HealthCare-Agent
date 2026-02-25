@@ -1,6 +1,8 @@
 import logging
+import os
 import time
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .routes.chat import router as chat_router
@@ -19,6 +21,17 @@ logger = logging.getLogger(__name__)
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Doctor Assistant MCP Backend")
+
+    cors_origins = os.getenv("CORS_ORIGINS", "*")
+    allowed_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins or ["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     
     # Middleware to log all requests
     @app.middleware("http")
