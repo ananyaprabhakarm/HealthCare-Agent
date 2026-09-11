@@ -148,6 +148,11 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# Node.js / frontend
+node_modules/
+dist/
+.vite/
+
 # Rope project settings
 .ropeproject
 

@@ -77,7 +77,7 @@ class ChatMessage(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id = Column(UUID(as_uuid=True), ForeignKey("chat_sessions.id"), nullable=False)
-    sender = Column(Enum("user", "assistant", "system", name="chat_sender_enum"), nullable=False)
+    sender = Column(Enum("user", "assistant", "system", "tool", name="chat_sender_enum"), nullable=False)
     content = Column(Text, nullable=False)
     tool_calls = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
