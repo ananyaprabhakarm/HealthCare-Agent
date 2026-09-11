@@ -12,10 +12,12 @@ type Summary = {
 export function DoctorView() {
   const [email, setEmail] = useState("ahuja@example.com");
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function requestSummary(timeframe: string) {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(apiUrl("/api/doctor/summary"), {
         method: "POST",
@@ -23,7 +25,16 @@ export function DoctorView() {
         body: JSON.stringify({ doctor_email: email, timeframe })
       });
       const data = await res.json();
+      if (!res.ok) {
+        setSummary(null);
+        setError(data?.detail || "Failed to generate summary. Please check the email and try again.");
+        return;
+      }
       setSummary(data);
+    } catch (err) {
+      console.error(err);
+      setSummary(null);
+      setError("Something went wrong while generating the summary. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -106,6 +117,7 @@ export function DoctorView() {
               </button>
             </div>
             {loading && <div style={{ fontSize: "0.8rem", color: "#9ca3af" }}>Generating and dispatching summary via notification channel...</div>}
+            {error && <div style={{ fontSize: "0.8rem", color: "#fca5a5" }}>{error}</div>}
           </div>
         </div>
         {summary && (

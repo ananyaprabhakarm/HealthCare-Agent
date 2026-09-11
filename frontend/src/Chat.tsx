@@ -46,6 +46,7 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
 
   async function send(e: FormEvent) {
     e.preventDefault();
+    if (loading) return;
     const trimmed = input.trim();
     if (!trimmed) return;
 
@@ -191,6 +192,7 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder={placeholder}
+          disabled={loading}
           style={{
             flex: 1,
             background: "#020617",
