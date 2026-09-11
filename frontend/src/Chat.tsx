@@ -107,15 +107,17 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
           padding: "1.25rem 1.5rem",
           borderBottom: "1px solid #111827",
           display: "flex",
+          flexWrap: "wrap",
           justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center",
+          rowGap: "0.5rem"
         }}
       >
         <div style={{ fontSize: "0.9rem", color: "#9ca3af" }}>
           LLM-powered assistant with MCP-backed tools
         </div>
 
-        <div style={{ display: "flex", gap: "0.4rem", fontSize: "0.75rem", color: "#6b7280" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", fontSize: "0.75rem", color: "#6b7280" }}>
           {["FastAPI", "PostgreSQL", "MCP"].map(tag => (
             <span
               key={tag}
@@ -195,6 +197,7 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
           disabled={loading}
           style={{
             flex: 1,
+            minWidth: 0,
             background: "#020617",
             borderRadius: "999px",
             border: "1px solid #1f2937",
