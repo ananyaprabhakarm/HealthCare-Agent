@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Chat } from "./Chat";
 import { apiUrl } from "./api";
+import { useMediaQuery } from "./useMediaQuery";
 
 type Summary = {
   doctor_name: string;
@@ -14,6 +15,7 @@ export function DoctorView() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const isNarrow = useMediaQuery("(max-width: 720px)");
 
   async function requestSummary(timeframe: string) {
     setLoading(true);
@@ -41,7 +43,7 @@ export function DoctorView() {
   }
 
   return (
-    <div style={{ width: "100%", display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(0,1.3fr)", gap: "1.75rem" }}>
+    <div style={{ width: "100%", display: "grid", gridTemplateColumns: isNarrow ? "minmax(0,1fr)" : "minmax(0,2fr) minmax(0,1.3fr)", gap: "1.75rem" }}>
       <div>
         <div style={{ marginBottom: "0.5rem" }}>
           <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#e5e7eb" }}>Doctor assistant</div>
