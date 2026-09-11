@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..schemas import DoctorStatsRequest, DoctorStatsResponse
-from ..mcp.tools import get_appointment_stats, send_doctor_notification
+from ..domain.appointments import get_appointment_stats, send_doctor_notification
 from ..services.notification import NotificationClient
 
 

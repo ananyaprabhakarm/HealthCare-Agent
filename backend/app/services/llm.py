@@ -1,8 +1,9 @@
 import os
 import json
 import re
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,6 +14,30 @@ try:
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
+
+
+@dataclass
+class ToolCall:
+    id: str
+    name: str
+    arguments: Dict[str, Any]
+
+
+@dataclass
+class ChatTurn:
+    """One turn of conversation history, in a provider-agnostic shape.
+
+    role is one of:
+      - "user": a plain user message (`text`)
+      - "assistant": an assistant turn, with `text` and/or `tool_calls`
+      - "tool_result": the result of executing one tool call (`tool_name`, `tool_response`)
+    """
+
+    role: str
+    text: str = ""
+    tool_calls: List[ToolCall] = field(default_factory=list)
+    tool_name: Optional[str] = None
+    tool_response: Optional[Dict[str, Any]] = None
 
 
 class LLMClient:
@@ -33,67 +58,21 @@ class LLMClient:
                 print("Warning: google-genai not installed. Install with: pip install google-genai")
             self.enabled = False
 
-    def _format_tools_for_gemini(self, tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        function_declarations = []
-        for tool in tools:
-            tool_name = tool.get("name", "")
-            if tool_name == "get_doctor_availability":
-                function_declarations.append({
-                    "name": "get_doctor_availability",
-                    "description": "Get available appointment slots for a doctor on a specific date",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "doctor_name": {"type": "string", "description": "Name of the doctor"},
-                            "date_str": {"type": "string", "description": "Date in ISO format (YYYY-MM-DD)"},
-                            "preferred_slot": {"type": "string", "description": "Preferred time slot: 'morning' or 'afternoon'", "enum": ["morning", "afternoon"]}
-                        },
-                        "required": ["doctor_name", "date_str"]
-                    }
-                })
-            elif tool_name == "create_appointment":
-                function_declarations.append({
-                    "name": "create_appointment",
-                    "description": "Create a new appointment for a patient with a doctor",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "doctor_name": {"type": "string", "description": "Name of the doctor"},
-                            "patient_email": {"type": "string", "description": "Email of the patient"},
-                            "patient_name": {"type": "string", "description": "Name of the patient"},
-                            "start": {"type": "string", "description": "Start datetime in ISO format"},
-                            "end": {"type": "string", "description": "End datetime in ISO format"},
-                            "reason": {"type": "string", "description": "Reason for the appointment"},
-                            "symptoms": {
-                                "type": "array",
-                                "description": "Patient symptoms",
-                                "items": {"type": "string"}
-                            }
-                        },
-                        "required": ["doctor_name", "patient_email", "start", "end"]
-                    }
-                })
-            elif tool_name == "get_appointment_stats":
-                function_declarations.append({
-                    "name": "get_appointment_stats",
-                    "description": "Get appointment statistics for a doctor",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "doctor_email": {"type": "string", "description": "Email of the doctor"},
-                            "timeframe": {"type": "string", "description": "Timeframe: 'today', 'yesterday', or 'tomorrow'"},
-                            "symptom_filter": {"type": "string", "description": "Filter by symptom keyword"}
-                        },
-                        "required": ["doctor_email", "timeframe"]
-                    }
-                })
-        return function_declarations
+    def _format_tools_for_gemini(self, tools: List[Any]) -> List[Dict[str, Any]]:
+        return [
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.parameters,
+            }
+            for tool in tools
+        ]
 
     def _simple_fallback_parser(self, user_message: str) -> Dict[str, Any]:
         user_lower = user_message.lower()
         doctor_match = re.search(r'dr\.?\s*(\w+)', user_lower, re.IGNORECASE)
         doctor_name = doctor_match.group(1).title() if doctor_match else None
-        
+
         date_keywords = {
             "today": datetime.now().date(),
             "tomorrow": (datetime.now() + timedelta(days=1)).date(),
@@ -104,7 +83,7 @@ class LLMClient:
             if keyword in user_lower:
                 date_str = date_obj.isoformat()
                 break
-        
+
         if not date_str:
             weekday_map = {
                 "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
@@ -117,13 +96,13 @@ class LLMClient:
                         days_ahead += 7
                     date_str = (datetime.now() + timedelta(days=days_ahead)).date().isoformat()
                     break
-        
+
         preferred_slot = None
         if "morning" in user_lower:
             preferred_slot = "morning"
         elif "afternoon" in user_lower:
             preferred_slot = "afternoon"
-        
+
         if doctor_name and date_str and ("availability" in user_lower or "available" in user_lower or "book" in user_lower or "appointment" in user_lower):
             return {
                 "content": "",
@@ -139,25 +118,33 @@ class LLMClient:
                     }
                 }]
             }
-        
+
         return {
             "content": "I can help you book appointments! Please provide:\n- Doctor's name (e.g., Dr. Ahuja)\n- Date (e.g., tomorrow, Friday)\n- Preferred time (morning or afternoon)\n\nExample: 'I want to book an appointment with Dr. Ahuja tomorrow morning'",
             "tool_calls": []
         }
 
-    def _build_gemini_contents(self, messages: List[Dict[str, str]]) -> List[Dict[str, Any]]:
-        contents: List[Dict[str, Any]] = []
-        for msg in messages:
-            role = msg.get("role", "user")
-            content = msg.get("content", "")
-            if role == "assistant":
-                role = "model"
-            elif role == "tool":
-                role = "user"
-                if not isinstance(content, str):
-                    content = json.dumps(content)
-                content = f"Tool result: {content}"
-            contents.append({"role": role, "parts": [{"text": content}]})
+    def _build_gemini_contents(self, turns: List[ChatTurn]) -> List["types.Content"]:
+        contents: List[types.Content] = []
+        for turn in turns:
+            if turn.role == "user":
+                contents.append(types.Content(role="user", parts=[types.Part.from_text(text=turn.text or "")]))
+            elif turn.role == "assistant":
+                parts = []
+                if turn.text:
+                    parts.append(types.Part.from_text(text=turn.text))
+                for call in turn.tool_calls:
+                    parts.append(types.Part.from_function_call(name=call.name, args=call.arguments))
+                if parts:
+                    contents.append(types.Content(role="model", parts=parts))
+            elif turn.role == "tool_result":
+                contents.append(types.Content(
+                    role="user",
+                    parts=[types.Part.from_function_response(
+                        name=turn.tool_name or "",
+                        response=turn.tool_response or {},
+                    )],
+                ))
         return contents
 
     def _extract_text_and_tool_calls(self, response: Any) -> Dict[str, Any]:
@@ -202,44 +189,24 @@ class LLMClient:
 
         return {"content": content, "tool_calls": tool_calls}
 
-    def chat(self, messages: List[Dict[str, str]], tools: List[Dict[str, Any]], db=None) -> Dict[str, Any]:
+    def chat(self, turns: List[ChatTurn], tools: List[Any]) -> Dict[str, Any]:
+        last_user_text = next((t.text for t in reversed(turns) if t.role == "user" and t.text), "")
+
         if not self.enabled:
-            last_user_message = next((m.get("content", "") for m in reversed(messages) if m.get("role") == "user"), "")
-            if tools and ("appointment" in last_user_message.lower() or "book" in last_user_message.lower() or "availability" in last_user_message.lower()):
-                fallback_result = self._simple_fallback_parser(last_user_message)
+            if tools and last_user_text and ("appointment" in last_user_text.lower() or "book" in last_user_text.lower() or "availability" in last_user_text.lower()):
+                fallback_result = self._simple_fallback_parser(last_user_text)
                 if fallback_result.get("tool_calls"):
                     return fallback_result
             return {"content": "I'd be happy to help! However, the LLM service is not configured. Please set LLM_API_KEY in your environment variables to enable full functionality. For basic appointment checking, please format your request like: 'Check Dr. Ahuja's availability for tomorrow morning'.", "tool_calls": []}
-        
-        formatted_messages = []
-        for msg in messages:
-            role = msg.get("role", "user")
-            if role == "user":
-                formatted_messages.append({"role": "user", "content": msg.get("content", "")})
-            elif role == "assistant":
-                formatted_messages.append({"role": "assistant", "content": msg.get("content", "")})
-            elif role == "tool":
-                tool_content = msg.get("content", "")
-                tool_call_id = msg.get("tool_call_id", "")
-                if isinstance(tool_content, str):
-                    try:
-                        tool_content = json.loads(tool_content)
-                    except:
-                        pass
-                formatted_messages.append({
-                    "role": "tool",
-                    "content": json.dumps(tool_content) if not isinstance(tool_content, str) else tool_content,
-                    "tool_call_id": tool_call_id
-                })
-        
+
         gemini_tools = self._format_tools_for_gemini(tools) if tools else []
-        
+
         try:
             if GEMINI_AVAILABLE and self.enabled and self.client:
                 try:
                     system_instruction = "You are a helpful assistant for a doctor appointment system. Use the provided tools to help users book appointments and check availability."
 
-                    contents = self._build_gemini_contents(formatted_messages)
+                    contents = self._build_gemini_contents(turns)
 
                     config_kwargs: Dict[str, Any] = {
                         "system_instruction": system_instruction,
@@ -262,9 +229,8 @@ class LLMClient:
                     print(f"Gemini API error: {error_msg}")
                     print(traceback.format_exc())
                     # Fallback to simple parser if API fails
-                    last_user_message = next((m.get("content", "") for m in reversed(formatted_messages) if m.get("role") == "user"), "")
-                    if tools and last_user_message:
-                        fallback_result = self._simple_fallback_parser(last_user_message)
+                    if tools and last_user_text:
+                        fallback_result = self._simple_fallback_parser(last_user_text)
                         if fallback_result.get("tool_calls"):
                             return fallback_result
                     return {"content": f"API Error: {error_msg}. Using fallback response.", "tool_calls": []}
@@ -276,5 +242,3 @@ class LLMClient:
             print(f"LLM API error: {error_msg}")
             print(traceback.format_exc())
             return {"content": f"I encountered an error while processing your request: {error_msg}. Please check your API configuration.", "tool_calls": []}
-
-
