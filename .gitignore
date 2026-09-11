@@ -152,6 +152,7 @@ venv.bak/
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 
 # Rope project settings
 .ropeproject

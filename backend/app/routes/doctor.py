@@ -17,7 +17,11 @@ def doctor_summary(payload: DoctorStatsRequest, db: Session = Depends(get_db)):
     logger.info(f"📊 Doctor summary request: email={payload.doctor_email}, timeframe={payload.timeframe}")
     if not payload.timeframe:
         raise HTTPException(status_code=400, detail="Timeframe required")
-    stats = get_appointment_stats(db, payload)
+    try:
+        stats = get_appointment_stats(db, payload)
+    except ValueError as e:
+        logger.warning(f"⚠️ Doctor summary request failed for {payload.doctor_email}: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
     notification_client = NotificationClient()
     send_doctor_notification(db, payload.doctor_email, "in_app", stats.summary, notification_client)
     logger.info(f"✓ Doctor summary completed for {payload.doctor_email}")
