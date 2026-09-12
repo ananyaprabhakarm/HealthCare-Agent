@@ -1,0 +1,399 @@
+/* Shared theme for Landing/Login/Signup. Scoped under .marketing so it
+   can never leak into the existing dark chat app shell. */
+
+:root {
+  --ink: #16231F;
+  --paper: #F1F3EE;
+  --paper-card: #FBFCFA;
+  --teal: #2F6F62;
+  --teal-dark: #1F4F45;
+  --amber: #D9A441;
+  --line: #DCE0D8;
+  --muted: #5B6960;
+}
+
+.marketing * {
+  box-sizing: border-box;
+}
+.marketing {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.marketing h1,
+.marketing h2,
+.marketing h3 {
+  font-family: 'Fraunces', serif;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ---- Header ---- */
+.marketing header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.6rem 4rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.marketing .logo {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  color: var(--ink);
+}
+.marketing .logo span {
+  color: var(--teal);
+}
+.marketing nav a,
+.marketing nav button {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-left: 1rem;
+  padding: 0.6rem 1.3rem;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.marketing nav a.primary,
+.marketing nav button.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.marketing nav a.primary:hover,
+.marketing nav button.primary:hover {
+  background: var(--teal-dark);
+}
+.marketing nav a:not(.primary):hover,
+.marketing nav button:not(.primary):hover {
+  background: var(--line);
+}
+
+/* ---- Hero ---- */
+.marketing .hero {
+  max-width: 1280px;
+  margin: 3rem auto 5rem;
+  padding: 0 4rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+.marketing .hero h1 {
+  font-size: 3.4rem;
+  line-height: 1.12;
+  max-width: 14ch;
+}
+.marketing .hero p.sub {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 42ch;
+  margin-top: 1.4rem;
+  line-height: 1.55;
+}
+.marketing .cta-row {
+  display: flex;
+  gap: 0.9rem;
+  margin-top: 2.2rem;
+  flex-wrap: wrap;
+}
+.marketing .btn {
+  padding: 0.85rem 1.6rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.marketing .btn-patient {
+  background: var(--teal);
+  color: var(--paper);
+}
+.marketing .btn-patient:hover {
+  background: var(--teal-dark);
+}
+.marketing .btn-doctor {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.marketing .btn-doctor:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ---- Chat mockup ---- */
+.marketing .chat-mock {
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1.5rem;
+  min-height: 340px;
+  box-shadow: 0 20px 60px -30px rgba(22, 35, 31, 0.35);
+}
+.marketing .chat-mock .tag {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.marketing .bubble {
+  max-width: 78%;
+  padding: 0.65rem 0.95rem;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  margin-bottom: 0.7rem;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.marketing .bubble.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.marketing .bubble.user {
+  background: var(--teal);
+  color: var(--paper);
+  margin-left: auto;
+  border-bottom-right-radius: 4px;
+}
+.marketing .bubble.agent {
+  background: #E7EBE4;
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+.marketing .bubble.confirm {
+  background: var(--amber);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+  font-weight: 500;
+}
+
+/* ---- Split section ---- */
+.marketing .split-section {
+  max-width: 1280px;
+  margin: 0 auto 6rem;
+  padding: 0 4rem;
+}
+.marketing .split-section > .label {
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 2.5rem;
+  max-width: 46ch;
+}
+.marketing .split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.marketing .panel {
+  padding: 3rem;
+  position: relative;
+}
+.marketing .panel + .panel {
+  border-left: 1px solid var(--line);
+}
+.marketing .panel h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.9rem;
+}
+.marketing .panel p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 34ch;
+}
+.marketing .panel.patient {
+  background: var(--paper-card);
+}
+.marketing .panel.doctor {
+  background: #EAF1EE;
+}
+.marketing .panel .kicker {
+  font-size: 0.8rem;
+  color: var(--teal-dark);
+  font-weight: 500;
+  margin-bottom: 0.8rem;
+}
+.marketing .panel ul {
+  margin: 1.3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.marketing .panel li {
+  font-size: 0.88rem;
+  color: var(--ink);
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--line);
+}
+.marketing .panel li:first-child {
+  border-top: none;
+}
+
+.marketing footer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 3rem 4rem 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 860px) {
+  .marketing header,
+  .marketing .hero,
+  .marketing .split-section,
+  .marketing footer {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .marketing .hero {
+    grid-template-columns: 1fr;
+    margin-bottom: 3rem;
+  }
+  .marketing .hero h1 {
+    font-size: 2.3rem;
+  }
+  .marketing .split {
+    grid-template-columns: 1fr;
+  }
+  .marketing .panel + .panel {
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* ---- Auth (Login/Signup) ---- */
+.marketing .auth-shell {
+  min-height: calc(100vh - 90px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+.marketing .auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  padding: 2.25rem;
+  box-shadow: 0 20px 60px -30px rgba(22, 35, 31, 0.35);
+}
+.marketing .auth-card h2 {
+  font-size: 1.6rem;
+  margin-bottom: 0.4rem;
+}
+.marketing .auth-subtitle {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.75rem;
+}
+.marketing .role-toggle {
+  display: flex;
+  gap: 0.4rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.25rem;
+  margin-bottom: 1.75rem;
+}
+.marketing .role-toggle button {
+  flex: 1;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+}
+.marketing .role-toggle button.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.marketing .field {
+  margin-bottom: 1.1rem;
+}
+.marketing .field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+}
+.marketing .field input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-family: inherit;
+}
+.marketing .field input:focus {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+.marketing .auth-submit {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.8rem 1rem;
+  border-radius: 0.6rem;
+  border: none;
+  background: var(--teal);
+  color: var(--paper);
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+.marketing .auth-submit:hover {
+  background: var(--teal-dark);
+}
+.marketing .auth-submit:disabled {
+  background: var(--line);
+  color: var(--muted);
+  cursor: default;
+}
+.marketing .auth-error {
+  background: #FBEAEA;
+  color: #8A3B3B;
+  border: 1px solid #EFC9C9;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+.marketing .auth-switch {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+}
+.marketing .auth-switch a {
+  color: var(--teal-dark);
+  font-weight: 500;
+  text-decoration: none;
+}
+.marketing .auth-switch a:hover {
+  text-decoration: underline;
+}

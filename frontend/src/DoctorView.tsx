@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Chat } from "./Chat";
-import { apiUrl } from "./api";
+import { authFetch } from "./api";
+import { useAuth } from "./AuthContext";
 import { useMediaQuery } from "./useMediaQuery";
 
 type Summary = {
@@ -11,7 +12,7 @@ type Summary = {
 };
 
 export function DoctorView() {
-  const [email, setEmail] = useState("ahuja@example.com");
+  const { user, token } = useAuth();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,10 +22,9 @@ export function DoctorView() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(apiUrl("/api/doctor/summary"), {
+      const res = await authFetch("/api/doctor/summary", token, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ doctor_email: email, timeframe })
+        body: JSON.stringify({ timeframe })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -49,20 +49,18 @@ export function DoctorView() {
           <div style={{ fontSize: "1.25rem", fontWeight: 600, color: "#e5e7eb" }}>Doctor assistant</div>
           <div style={{ fontSize: "0.9rem", color: "#9ca3af", marginTop: "0.25rem" }}>Ask for stats in natural language or use the quick summary panel.</div>
         </div>
-        <Chat endpoint="/api/chat/doctor" placeholder='e.g. "How many appointments do I have today and tomorrow?"' userEmail={email} />
+        <Chat endpoint="/api/chat/doctor" placeholder='e.g. "How many appointments do I have today and tomorrow?"' />
       </div>
       <div style={{ alignSelf: "stretch", display: "flex", flexDirection: "column", gap: "1rem" }}>
         <div style={{ padding: "1rem 1.25rem", borderRadius: "1.25rem", border: "1px solid #1f2937", background: "linear-gradient(145deg,rgba(56,189,248,0.15),rgba(129,140,248,0.05))" }}>
           <div style={{ fontSize: "0.8rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#a5b4fc", marginBottom: "0.75rem" }}>Summary controls</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <label style={{ fontSize: "0.85rem", color: "#e5e7eb" }}>
+            <div style={{ fontSize: "0.85rem", color: "#e5e7eb" }}>
               Notification email
-              <input
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                style={{ marginTop: "0.35rem", width: "100%", padding: "0.5rem 0.75rem", borderRadius: "0.75rem", border: "1px solid #1f2937", background: "#020617", color: "#e5e7eb", fontSize: "0.85rem" }}
-              />
-            </label>
+              <div style={{ marginTop: "0.35rem", width: "100%", padding: "0.5rem 0.75rem", borderRadius: "0.75rem", border: "1px solid #1f2937", background: "#020617", color: "#9ca3af", fontSize: "0.85rem" }}>
+                {user?.email}
+              </div>
+            </div>
             <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.25rem" }}>
               <button
                 onClick={() => requestSummary("yesterday")}
