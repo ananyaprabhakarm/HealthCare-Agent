@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useRef, useState, useCallback } from "react";
-import { apiUrl } from "./api";
+import { authFetch } from "./api";
+import { useAuth } from "./AuthContext";
 
 type Message = {
   id: string;
@@ -10,10 +11,10 @@ type Message = {
 type ChatProps = {
   endpoint: string;
   placeholder: string;
-  userEmail?: string;
 };
 
-export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
+export function Chat({ endpoint, placeholder }: ChatProps) {
+  const { token } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -26,13 +27,11 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
 
   const sendMessageToBackend = useCallback(
     async (content: string) => {
-      const res = await fetch(apiUrl(endpoint), {
+      const res = await authFetch(endpoint, token, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          message: content,
-          user_email: userEmail
+          message: content
         })
       });
 
@@ -41,7 +40,7 @@ export function Chat({ endpoint, placeholder, userEmail }: ChatProps) {
       }
       return res.json();
     },
-    [endpoint, sessionId, userEmail]
+    [endpoint, sessionId, token]
   );
 
   async function send(e: FormEvent) {
