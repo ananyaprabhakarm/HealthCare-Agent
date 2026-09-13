@@ -198,8 +198,82 @@ def get_doctor_weekly_availability(db: Session, doctor_id: UUID) -> List[DoctorA
         .all()
     )
     return [
-        DoctorAvailabilityEntry(day_of_week=int(row.weekday), start_time=row.start_time, end_time=row.end_time)
+        DoctorAvailabilityEntry(id=row.id, day_of_week=int(row.weekday), start_time=row.start_time, end_time=row.end_time)
         for row in rows
     ]
+
+
+def create_doctor_availability(
+    db: Session, doctor_id: UUID, day_of_week: int, start_time: time, end_time: time
+) -> DoctorAvailabilityEntry:
+    if start_time >= end_time:
+        raise ValueError("start_time must be before end_time")
+
+    weekday_str = str(day_of_week)
+    existing_rows = (
+        db.query(DoctorAvailability)
+        .filter(DoctorAvailability.doctor_id == doctor_id, DoctorAvailability.weekday == weekday_str)
+        .all()
+    )
+    for row in existing_rows:
+        if start_time < row.end_time and row.start_time < end_time:
+            raise ValueError("This overlaps an existing availability slot")
+
+    row = DoctorAvailability(
+        doctor_id=doctor_id,
+        weekday=weekday_str,
+        start_time=start_time,
+        end_time=end_time,
+        slot_duration_minutes="30",
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return DoctorAvailabilityEntry(id=row.id, day_of_week=day_of_week, start_time=row.start_time, end_time=row.end_time)
+
+
+def delete_doctor_availability(db: Session, doctor_id: UUID, availability_id: UUID) -> bool:
+    row = (
+        db.query(DoctorAvailability)
+        .filter(DoctorAvailability.id == availability_id, DoctorAvailability.doctor_id == doctor_id)
+        .first()
+    )
+    if not row:
+        return False
+    db.delete(row)
+    db.commit()
+    return True
+
+
+def cancel_patient_appointment(db: Session, patient_id: UUID, appointment_id: UUID) -> Optional[PatientAppointmentSummary]:
+    appointment = (
+        db.query(Appointment)
+        .filter(Appointment.id == appointment_id, Appointment.patient_id == patient_id)
+        .first()
+    )
+    if not appointment:
+        return None
+    if appointment.status == "cancelled":
+        raise ValueError("Appointment is already cancelled")
+    # SQLite drops tzinfo on round-trip (Postgres doesn't) — this app stores
+    # everything in UTC, so a naive value read back is always UTC.
+    start_datetime = appointment.start_datetime
+    if start_datetime.tzinfo is None:
+        start_datetime = start_datetime.replace(tzinfo=timezone.utc)
+    if start_datetime < datetime.now(timezone.utc):
+        raise ValueError("Cannot cancel a past appointment")
+
+    appointment.status = "cancelled"
+    db.commit()
+    db.refresh(appointment)
+    return PatientAppointmentSummary(
+        id=appointment.id,
+        doctor_name=appointment.doctor.name,
+        doctor_specialization=appointment.doctor.specialization,
+        start_datetime=appointment.start_datetime,
+        end_datetime=appointment.end_datetime,
+        status=appointment.status,
+        reason=appointment.reason,
+    )
 
 
