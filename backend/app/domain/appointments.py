@@ -1,10 +1,23 @@
 from datetime import datetime, timedelta, time, timezone
 from typing import Any, Dict, List, Optional
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from ..models import Doctor, Patient, Appointment, DoctorAvailability
-from ..schemas import AvailabilityResponse, Slot, AppointmentCreatePayload, AppointmentResponse, DoctorStatsRequest, DoctorStats, DoctorStatsResponse
+from ..schemas import (
+    AvailabilityResponse,
+    Slot,
+    AppointmentCreatePayload,
+    AppointmentResponse,
+    DoctorAvailabilityEntry,
+    DoctorDirectoryEntry,
+    DoctorScheduleEntry,
+    DoctorStatsRequest,
+    DoctorStats,
+    DoctorStatsResponse,
+    PatientAppointmentSummary,
+)
 from ..services.calendar import CalendarClient
 from ..services.email import EmailClient
 from ..services.notification import NotificationClient
@@ -112,5 +125,81 @@ def send_doctor_notification(db: Session, doctor_email: str, channel: str, messa
     recipient = doctor.email
     external_id = notification_client.send(channel, recipient, message)
     return {"status": "sent", "channel": channel, "recipient": recipient, "external_id": external_id}
+
+
+def get_patient_appointments(db: Session, patient_id: UUID) -> List[PatientAppointmentSummary]:
+    appointments = (
+        db.query(Appointment)
+        .filter(Appointment.patient_id == patient_id)
+        .order_by(Appointment.start_datetime.desc())
+        .all()
+    )
+    return [
+        PatientAppointmentSummary(
+            id=a.id,
+            doctor_name=a.doctor.name,
+            doctor_specialization=a.doctor.specialization,
+            start_datetime=a.start_datetime,
+            end_datetime=a.end_datetime,
+            status=a.status,
+            reason=a.reason,
+        )
+        for a in appointments
+    ]
+
+
+def get_doctor_directory(db: Session) -> List[DoctorDirectoryEntry]:
+    doctors = db.query(Doctor).order_by(Doctor.name).all()
+    today_str = datetime.now(timezone.utc).date().isoformat()
+    entries = []
+    for doctor in doctors:
+        availability = get_doctor_availability(db, doctor.name, today_str)
+        entries.append(DoctorDirectoryEntry(
+            id=doctor.id,
+            name=doctor.name,
+            specialization=doctor.specialization,
+            available_today=len(availability.slots) > 0,
+        ))
+    return entries
+
+
+def get_doctor_schedule_today(db: Session, doctor_id: UUID) -> List[DoctorScheduleEntry]:
+    now = datetime.now(timezone.utc)
+    start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    end = start + timedelta(days=1)
+    appointments = (
+        db.query(Appointment)
+        .filter(
+            Appointment.doctor_id == doctor_id,
+            Appointment.start_datetime >= start,
+            Appointment.start_datetime < end,
+        )
+        .order_by(Appointment.start_datetime.asc())
+        .all()
+    )
+    return [
+        DoctorScheduleEntry(
+            id=a.id,
+            patient_name=a.patient.name,
+            start_datetime=a.start_datetime,
+            end_datetime=a.end_datetime,
+            status=a.status,
+            reason=a.reason,
+        )
+        for a in appointments
+    ]
+
+
+def get_doctor_weekly_availability(db: Session, doctor_id: UUID) -> List[DoctorAvailabilityEntry]:
+    rows = (
+        db.query(DoctorAvailability)
+        .filter(DoctorAvailability.doctor_id == doctor_id)
+        .order_by(DoctorAvailability.weekday.asc())
+        .all()
+    )
+    return [
+        DoctorAvailabilityEntry(day_of_week=int(row.weekday), start_time=row.start_time, end_time=row.end_time)
+        for row in rows
+    ]
 
 
