@@ -13,3 +13,5 @@ sendgrid
 requests
 twilio
 python-dotenv
+pyjwt
+bcrypt

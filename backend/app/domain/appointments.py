@@ -48,7 +48,11 @@ def create_appointment(db: Session, payload: AppointmentCreatePayload, calendar_
         raise ValueError("Doctor not found")
     patient = db.query(Patient).filter(Patient.email == payload.patient_email).first()
     if not patient:
-        patient = Patient(name=payload.patient_name, email=payload.patient_email)
+        # In the authenticated chat flow this patient already has an account
+        # (payload.patient_email is always the signed-in patient's own email),
+        # so this branch is a safety net, not the normal path. password_hash is
+        # left blank — a record created here can't be used to log in.
+        patient = Patient(name=payload.patient_name, email=payload.patient_email, password_hash="")
         db.add(patient)
         db.commit()
         db.refresh(patient)

@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from .routes.auth import router as auth_router
 from .routes.chat import router as chat_router
 from .routes.doctor import router as doctor_router
 
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
             content={"detail": "Internal server error"}
         )
     
+    app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
     app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
     app.include_router(doctor_router, prefix="/api/doctor", tags=["doctor"])
     

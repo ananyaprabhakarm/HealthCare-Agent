@@ -13,6 +13,7 @@ class Doctor(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    password_hash = Column(String, nullable=False)
     google_calendar_id = Column(String, nullable=True)
     specialization = Column(String, nullable=True)
 
@@ -26,6 +27,7 @@ class Patient(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    password_hash = Column(String, nullable=False)
     phone = Column(String, nullable=True)
 
     appointments = relationship("Appointment", back_populates="patient")

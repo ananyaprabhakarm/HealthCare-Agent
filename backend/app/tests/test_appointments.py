@@ -36,7 +36,7 @@ def db_session():
 
 @pytest.fixture()
 def doctor(db_session):
-    doc = Doctor(name="Dr. Ahuja", email="ahuja@example.com")
+    doc = Doctor(name="Dr. Ahuja", email="ahuja@example.com", password_hash="unused-in-this-test")
     db_session.add(doc)
     db_session.commit()
     db_session.refresh(doc)

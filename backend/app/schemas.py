@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class ChatMessageSchema(BaseModel):
@@ -26,7 +26,6 @@ class ChatSessionSchema(BaseModel):
 class ChatRequest(BaseModel):
     session_id: Optional[UUID] = None
     message: str
-    user_email: Optional[EmailStr] = None
 
 
 class ChatResponse(BaseModel):
@@ -69,6 +68,14 @@ class DoctorStatsRequest(BaseModel):
     symptom_filter: str | None = None
 
 
+class DoctorSummaryRequest(BaseModel):
+    """Public request body for POST /api/doctor/summary. No email field —
+    the doctor is identified by their authenticated session, not the body."""
+
+    timeframe: str
+    symptom_filter: str | None = None
+
+
 class DoctorStats(BaseModel):
     total: int
     by_status: dict[str, int]
@@ -79,5 +86,34 @@ class DoctorStatsResponse(BaseModel):
     timeframe: str
     stats: DoctorStats
     summary: str
+
+
+class SignupRequest(BaseModel):
+    role: Literal["patient", "doctor"]
+    name: str
+    email: EmailStr
+    password: str = Field(min_length=6)
+    phone: str | None = None
+    specialization: str | None = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
+    role: str
+    name: str
+    email: str
+
+
+class MeResponse(BaseModel):
+    id: UUID
+    role: str
+    name: str
+    email: str
 
 
