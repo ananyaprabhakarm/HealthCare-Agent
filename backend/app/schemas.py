@@ -144,7 +144,14 @@ class DoctorScheduleEntry(BaseModel):
 
 
 class DoctorAvailabilityEntry(BaseModel):
+    id: UUID
     day_of_week: int
+    start_time: time
+    end_time: time
+
+
+class DoctorAvailabilityCreate(BaseModel):
+    day_of_week: int = Field(ge=0, le=6)
     start_time: time
     end_time: time
 

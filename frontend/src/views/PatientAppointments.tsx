@@ -13,10 +13,15 @@ type Appointment = {
   reason: string | null;
 };
 
+function canCancel(appt: Appointment): boolean {
+  return appt.status === "scheduled" && new Date(appt.start_datetime).getTime() > Date.now();
+}
+
 export function PatientAppointments() {
   const { token } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +41,25 @@ export function PatientAppointments() {
       cancelled = true;
     };
   }, [token]);
+
+  async function handleCancel(appt: Appointment) {
+    if (!window.confirm(`Cancel your appointment with ${appt.doctor_name}?`)) return;
+    setCancellingId(appt.id);
+    try {
+      const res = await authFetch(`/api/patients/me/appointments/${appt.id}/cancel`, token, { method: "PATCH" });
+      const data = await res.json();
+      if (!res.ok) {
+        window.alert(data?.detail || "Couldn't cancel this appointment. Please try again.");
+        return;
+      }
+      setAppointments(prev => (prev ? prev.map(a => (a.id === appt.id ? data : a)) : prev));
+    } catch (err) {
+      console.error(err);
+      window.alert("Something went wrong. Please try again.");
+    } finally {
+      setCancellingId(null);
+    }
+  }
 
   return (
     <div>
@@ -61,7 +85,14 @@ export function PatientAppointments() {
               </div>
               <div className="dash-appt-time">{formatDateTime(appt.start_datetime)}</div>
             </div>
-            <div className={`dash-status-pill ${pill.className}`}>{pill.label}</div>
+            <div className="dash-appt-actions">
+              {canCancel(appt) && (
+                <button className="dash-cancel-btn" onClick={() => handleCancel(appt)} disabled={cancellingId === appt.id}>
+                  {cancellingId === appt.id ? "Cancelling…" : "Cancel"}
+                </button>
+              )}
+              <div className={`dash-status-pill ${pill.className}`}>{pill.label}</div>
+            </div>
           </div>
         );
       })}

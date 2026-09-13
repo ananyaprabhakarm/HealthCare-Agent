@@ -6,7 +6,10 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db import Base
 from app.domain.appointments import (
+    cancel_patient_appointment,
     create_appointment,
+    create_doctor_availability,
+    delete_doctor_availability,
     get_appointment_stats,
     get_doctor_availability,
     get_doctor_directory,
@@ -14,7 +17,7 @@ from app.domain.appointments import (
     get_doctor_weekly_availability,
     get_patient_appointments,
 )
-from app.models import Doctor, DoctorAvailability
+from app.models import Appointment, Doctor, DoctorAvailability, Patient
 from app.schemas import AppointmentCreatePayload, DoctorStatsRequest
 
 
@@ -167,3 +170,158 @@ def test_get_doctor_weekly_availability_returns_configured_days(db_session, doct
     assert entries[0].day_of_week == datetime.now(timezone.utc).date().weekday()
     assert entries[0].start_time == time(9, 0)
     assert entries[0].end_time == time(10, 0)
+
+
+def _other_weekday(doctor_weekday: int) -> int:
+    return (doctor_weekday + 1) % 7
+
+
+def test_create_doctor_availability_success(db_session, doctor):
+    today_weekday = datetime.now(timezone.utc).date().weekday()
+    other_day = _other_weekday(today_weekday)
+
+    entry = create_doctor_availability(db_session, doctor.id, other_day, time(14, 0), time(15, 0))
+
+    assert entry.id is not None
+    assert entry.day_of_week == other_day
+    assert entry.start_time == time(14, 0)
+    assert entry.end_time == time(15, 0)
+    entries = get_doctor_weekly_availability(db_session, doctor.id)
+    assert len(entries) == 2
+
+
+def test_create_doctor_availability_rejects_invalid_range(db_session, doctor):
+    other_day = _other_weekday(datetime.now(timezone.utc).date().weekday())
+    with pytest.raises(ValueError, match="start_time must be before end_time"):
+        create_doctor_availability(db_session, doctor.id, other_day, time(15, 0), time(14, 0))
+
+
+def test_create_doctor_availability_rejects_overlap(db_session, doctor):
+    today_weekday = datetime.now(timezone.utc).date().weekday()
+    with pytest.raises(ValueError, match="overlaps"):
+        create_doctor_availability(db_session, doctor.id, today_weekday, time(9, 30), time(10, 30))
+
+
+def test_delete_doctor_availability_removes_own_slot(db_session, doctor):
+    entries = get_doctor_weekly_availability(db_session, doctor.id)
+    deleted = delete_doctor_availability(db_session, doctor.id, entries[0].id)
+    assert deleted is True
+    assert get_doctor_weekly_availability(db_session, doctor.id) == []
+
+
+def test_delete_doctor_availability_rejects_other_doctors_slot(db_session, doctor):
+    other_doctor = Doctor(name="Dr. Other", email="other.doc@example.com", password_hash="unused")
+    db_session.add(other_doctor)
+    db_session.commit()
+    db_session.refresh(other_doctor)
+
+    entries = get_doctor_weekly_availability(db_session, doctor.id)
+    deleted = delete_doctor_availability(db_session, other_doctor.id, entries[0].id)
+
+    assert deleted is False
+    assert len(get_doctor_weekly_availability(db_session, doctor.id)) == 1
+
+
+def _create_future_appointment(db_session, doctor, patient_email: str, reason: str | None = None) -> "Appointment":
+    """Books an appointment a fixed 30 min from now, bypassing the doctor's
+    availability window. _book_first_slot's fixed 9:00 AM "today" slot
+    becomes a *past* appointment for any test run after 9:30 AM, which
+    would wrongly trip the "can't cancel a past appointment" rule below."""
+    patient = db_session.query(Patient).filter(Patient.email == patient_email).first()
+    if not patient:
+        patient = Patient(name="Test Patient", email=patient_email, password_hash="unused")
+        db_session.add(patient)
+        db_session.commit()
+        db_session.refresh(patient)
+
+    start = datetime.now(timezone.utc) + timedelta(minutes=30)
+    appointment = Appointment(
+        doctor_id=doctor.id,
+        patient_id=patient.id,
+        start_datetime=start,
+        end_datetime=start + timedelta(minutes=30),
+        status="scheduled",
+        reason=reason,
+    )
+    db_session.add(appointment)
+    db_session.commit()
+    db_session.refresh(appointment)
+    return appointment
+
+
+def test_cancel_patient_appointment_success(db_session, doctor):
+    appointment = _create_future_appointment(db_session, doctor, "cancel-me@example.com")
+
+    result = cancel_patient_appointment(db_session, appointment.patient_id, appointment.id)
+
+    assert result is not None
+    assert result.status == "cancelled"
+
+
+def test_cancel_patient_appointment_rejects_other_patients_appointment(db_session, doctor):
+    _book_first_slot(db_session, doctor, patient_email="owner@example.com")
+    owner = db_session.query(Patient).filter(Patient.email == "owner@example.com").first()
+    appointment = db_session.query(Appointment).filter(Appointment.patient_id == owner.id).first()
+
+    intruder = Patient(name="Intruder", email="intruder@example.com", password_hash="unused")
+    db_session.add(intruder)
+    db_session.commit()
+    db_session.refresh(intruder)
+
+    result = cancel_patient_appointment(db_session, intruder.id, appointment.id)
+
+    assert result is None
+    assert db_session.get(Appointment, appointment.id).status == "scheduled"
+
+
+def test_cancel_patient_appointment_rejects_already_cancelled(db_session, doctor):
+    appointment = _create_future_appointment(db_session, doctor, "twice@example.com")
+
+    cancel_patient_appointment(db_session, appointment.patient_id, appointment.id)
+    with pytest.raises(ValueError, match="already cancelled"):
+        cancel_patient_appointment(db_session, appointment.patient_id, appointment.id)
+
+
+def test_cancel_patient_appointment_rejects_past_appointment(db_session, doctor):
+    patient = Patient(name="Past Patient", email="past@example.com", password_hash="unused")
+    db_session.add(patient)
+    db_session.commit()
+    db_session.refresh(patient)
+
+    past_start = datetime.now(timezone.utc) - timedelta(days=1)
+    appointment = Appointment(
+        doctor_id=doctor.id,
+        patient_id=patient.id,
+        start_datetime=past_start,
+        end_datetime=past_start + timedelta(minutes=30),
+        status="scheduled",
+    )
+    db_session.add(appointment)
+    db_session.commit()
+    db_session.refresh(appointment)
+
+    with pytest.raises(ValueError, match="past appointment"):
+        cancel_patient_appointment(db_session, patient.id, appointment.id)
+
+
+def test_get_appointment_stats_excludes_cancelled_appointment(db_session, doctor):
+    """Explicit verification (per Phase 3 spec) that stats already exclude
+    cancelled appointments, rather than just assuming the existing filter covers it."""
+    appointment = _create_future_appointment(db_session, doctor, "stats-cancel@example.com")
+
+    cancel_patient_appointment(db_session, appointment.patient_id, appointment.id)
+
+    stats = get_appointment_stats(db_session, DoctorStatsRequest(doctor_email=doctor.email, timeframe="today"))
+    assert stats.stats.total == 0
+
+
+def test_get_doctor_schedule_today_still_shows_cancelled_appointment(db_session, doctor):
+    """Explicit verification (per Phase 3 spec) that a doctor's schedule still
+    surfaces a cancelled appointment (labeled as such) rather than hiding it."""
+    appointment = _create_future_appointment(db_session, doctor, "schedule-cancel@example.com")
+
+    cancel_patient_appointment(db_session, appointment.patient_id, appointment.id)
+
+    schedule = get_doctor_schedule_today(db_session, doctor.id)
+    assert len(schedule) == 1
+    assert schedule[0].status == "cancelled"
