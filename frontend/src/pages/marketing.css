@@ -46,6 +46,11 @@
   letter-spacing: 0.01em;
   text-decoration: none;
   color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+}
+.marketing .logo svg {
+  display: block;
 }
 .marketing .logo span {
   color: var(--teal);

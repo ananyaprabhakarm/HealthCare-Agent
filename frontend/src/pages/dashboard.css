@@ -40,6 +40,12 @@
   font-weight: 600;
   margin-bottom: 2.2rem;
   padding-left: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.dash-brand img {
+  flex-shrink: 0;
 }
 .dash-brand span {
   color: var(--amber);

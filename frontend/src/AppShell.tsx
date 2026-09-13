@@ -36,6 +36,7 @@ export function AppShell() {
       <div className="dash-shell">
         <aside className="dash-sidebar">
           <div className="dash-brand">
+            <img src="/icon-only.svg" alt="" width={24} height={24} />
             health<span>care</span>.agent
           </div>
           <nav>
