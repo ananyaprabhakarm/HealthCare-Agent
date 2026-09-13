@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Logo } from "../Logo";
 import "./marketing.css";
 
 const BUBBLES = [
@@ -23,7 +24,7 @@ export function Landing() {
     <div className="marketing">
       <header>
         <Link to="/" className="logo">
-          health<span>care</span>.agent
+          <Logo />
         </Link>
         <nav>
           <Link to="/login">Log in</Link>

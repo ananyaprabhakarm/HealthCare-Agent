@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth, Role } from "../AuthContext";
+import { Logo } from "../Logo";
 import "./marketing.css";
 
 export function Signup() {
@@ -43,7 +44,7 @@ export function Signup() {
     <div className="marketing">
       <header>
         <Link to="/" className="logo">
-          health<span>care</span>.agent
+          <Logo />
         </Link>
         <nav>
           <Link to="/login">Log in</Link>
