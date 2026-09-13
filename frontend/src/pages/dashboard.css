@@ -47,7 +47,7 @@
 .dash-brand img {
   flex-shrink: 0;
 }
-.dash-brand span {
+.dash-brand .accent {
   color: var(--amber);
 }
 .dash-nav-item {

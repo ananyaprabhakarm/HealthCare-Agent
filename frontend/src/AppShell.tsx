@@ -37,7 +37,9 @@ export function AppShell() {
         <aside className="dash-sidebar">
           <div className="dash-brand">
             <img src="/icon-only.svg" alt="" width={24} height={24} />
-            health<span>care</span>.agent
+            <span className="dash-brand-text">
+              health<span className="accent">care</span>.agent
+            </span>
           </div>
           <nav>
             {nav.map(item => (
