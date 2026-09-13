@@ -1,5 +1,10 @@
 type LogoProps = {
   height?: number;
+  /** "dark" (default) = ink text for light backgrounds, matching Landing/
+   * Login/Signup. "light" = paper/amber text for dark backgrounds, e.g.
+   * the AppShell sidebar — the default dark-ink wordmark wouldn't read
+   * against that background. */
+  variant?: "dark" | "light";
 };
 
 /** Inlined (not an <img src>) so the Fraunces web font — only loaded on the
@@ -12,8 +17,10 @@ type LogoProps = {
  * font-size 24 starting at x=66 runs to x≈256, so the original 220 clipped
  * the last few letters ("...agen|t") — a bug in the source asset, not a
  * scaling issue. Only the viewBox changed; icon/text coordinates are untouched. */
-export function Logo({ height = 32 }: LogoProps) {
+export function Logo({ height = 32, variant = "dark" }: LogoProps) {
   const width = (270 / 56) * height;
+  const textColor = variant === "light" ? "#F1F3EE" : "#16231F";
+  const accentColor = variant === "light" ? "#D9A441" : "#2F6F62";
   return (
     <svg width={width} height={height} viewBox="0 0 270 56" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="healthcare.agent">
       <g transform="translate(4,4)">
@@ -34,8 +41,8 @@ export function Logo({ height = 32 }: LogoProps) {
           strokeLinejoin="round"
         />
       </g>
-      <text x="66" y="34" fontFamily="Fraunces, serif" fontSize={24} fontWeight={500} fill="#16231F">
-        healthcare<tspan fill="#2F6F62">.agent</tspan>
+      <text x="66" y="34" fontFamily="Fraunces, serif" fontSize={24} fontWeight={500} fill={textColor}>
+        healthcare<tspan fill={accentColor}>.agent</tspan>
       </text>
     </svg>
   );

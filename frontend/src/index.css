@@ -1,0 +1,12 @@
+/* Global reset. Without this, the browser's default 8px body margin adds
+ * to any min-height:100vh element, making the page taller/wider than the
+ * viewport — a permanently scrollable page with a thin band of unstyled
+ * background visible at the edges. */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+#root {
+  min-height: 100vh;
+}
