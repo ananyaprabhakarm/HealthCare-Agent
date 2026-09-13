@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "./AuthContext";
+import { Logo } from "./Logo";
 import { Chat } from "./Chat";
 import { PatientAppointments } from "./views/PatientAppointments";
 import { FindADoctor } from "./views/FindADoctor";
@@ -36,10 +37,7 @@ export function AppShell() {
       <div className="dash-shell">
         <aside className="dash-sidebar">
           <div className="dash-brand">
-            <img src="/icon-only.svg" alt="" width={24} height={24} />
-            <span className="dash-brand-text">
-              health<span className="accent">care</span>.agent
-            </span>
+            <Logo height={32} variant="light" />
           </div>
           <nav>
             {nav.map(item => (
