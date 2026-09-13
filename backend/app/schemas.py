@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import List, Literal, Optional
 from uuid import UUID
 
@@ -115,5 +115,37 @@ class MeResponse(BaseModel):
     role: str
     name: str
     email: str
+
+
+class PatientAppointmentSummary(BaseModel):
+    id: UUID
+    doctor_name: str
+    doctor_specialization: str | None = None
+    start_datetime: datetime
+    end_datetime: datetime
+    status: str
+    reason: str | None = None
+
+
+class DoctorDirectoryEntry(BaseModel):
+    id: UUID
+    name: str
+    specialization: str | None = None
+    available_today: bool
+
+
+class DoctorScheduleEntry(BaseModel):
+    id: UUID
+    patient_name: str
+    start_datetime: datetime
+    end_datetime: datetime
+    status: str
+    reason: str | None = None
+
+
+class DoctorAvailabilityEntry(BaseModel):
+    day_of_week: int
+    start_time: time
+    end_time: time
 
 

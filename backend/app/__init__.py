@@ -8,6 +8,8 @@ from fastapi.responses import JSONResponse
 from .routes.auth import router as auth_router
 from .routes.chat import router as chat_router
 from .routes.doctor import router as doctor_router
+from .routes.doctors import router as doctors_router
+from .routes.patients import router as patients_router
 
 
 # Configure logging
@@ -77,6 +79,8 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
     app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
     app.include_router(doctor_router, prefix="/api/doctor", tags=["doctor"])
+    app.include_router(doctors_router, prefix="/api/doctors", tags=["doctors"])
+    app.include_router(patients_router, prefix="/api/patients", tags=["patients"])
     
     logger.info("🚀 HealthCare Agent Backend initialized")
     
