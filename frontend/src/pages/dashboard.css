@@ -1,0 +1,417 @@
+/* App shell (post-login /app). Scoped under .dash so it can't leak into
+   Landing/Login/Signup (.marketing) or vice versa, even though they share
+   the same color tokens (declared once, globally, in marketing.css). */
+
+.dash * {
+  box-sizing: border-box;
+}
+.dash {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.dash h1,
+.dash h2,
+.dash h3,
+.dash h4 {
+  font-family: 'Fraunces', serif;
+  margin: 0;
+  font-weight: 500;
+}
+
+.dash-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.dash-sidebar {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 1.6rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+}
+.dash-brand {
+  font-family: 'Fraunces', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 2.2rem;
+  padding-left: 0.3rem;
+}
+.dash-brand span {
+  color: var(--amber);
+}
+.dash-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 9px;
+  font-size: 0.9rem;
+  color: #C7D0C9;
+  cursor: pointer;
+  margin-bottom: 0.2rem;
+  border: none;
+  background: none;
+  font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+.dash-nav-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--paper);
+}
+.dash-nav-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.04);
+}
+.dash-sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.82rem;
+  color: #9AA69C;
+}
+.dash-sidebar-footer .who {
+  color: var(--paper);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+.dash-logout {
+  color: #E39A9A;
+  cursor: pointer;
+  font-size: 0.82rem;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+}
+
+.dash-main {
+  padding: 2.4rem 3rem;
+  overflow-y: auto;
+}
+.dash-page-head {
+  margin-bottom: 1.8rem;
+}
+.dash-page-head h2 {
+  font-size: 1.6rem;
+}
+.dash-page-head p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin-top: 0.35rem;
+}
+
+/* ---- Chat ---- */
+.dash-chat-panel {
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+  max-width: 720px;
+}
+.dash-chat-msgs {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.dash-bubble {
+  max-width: 75%;
+  padding: 0.65rem 0.95rem;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  margin-bottom: 0.7rem;
+  white-space: pre-wrap;
+}
+.dash-bubble.user {
+  background: var(--teal);
+  color: var(--paper);
+  margin-left: auto;
+  border-bottom-right-radius: 4px;
+}
+.dash-bubble.agent {
+  background: #E7EBE4;
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+.dash-bubble.system {
+  background: #FBEAEA;
+  color: #8A3B3B;
+  border-bottom-left-radius: 4px;
+  font-size: 0.85rem;
+}
+.dash-chat-loading {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 0.2rem;
+}
+.dash-chat-input-row {
+  display: flex;
+  gap: 0.7rem;
+  padding: 1rem;
+  border-top: 1px solid var(--line);
+}
+.dash-chat-input-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: var(--paper);
+  color: var(--ink);
+}
+.dash-chat-input-row input:disabled {
+  opacity: 0.6;
+}
+.dash-send-btn {
+  background: var(--teal);
+  color: var(--paper);
+  border: none;
+  border-radius: 10px;
+  padding: 0.7rem 1.3rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.dash-send-btn:disabled {
+  background: var(--line);
+  color: var(--muted);
+  cursor: default;
+}
+
+/* ---- Cards / directory ---- */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  max-width: 980px;
+}
+.dash-card {
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1.3rem;
+}
+.dash-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.dash-card h4 {
+  font-size: 1.05rem;
+  margin-bottom: 0.2rem;
+}
+.dash-card .spec {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.dash-badge {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.dash-badge.available {
+  background: #E1F0E5;
+  color: var(--good);
+}
+.dash-badge.busy {
+  background: #F0E9E1;
+  color: #9A7A4A;
+}
+.dash-card-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.dash-card-actions button {
+  font-size: 0.82rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+.dash-card-actions button.primary {
+  background: var(--teal);
+  color: var(--paper);
+  border-color: var(--teal);
+}
+
+.dash-filter-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1.4rem;
+  flex-wrap: wrap;
+}
+.dash-filter-chip {
+  font-size: 0.82rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--paper-card);
+  cursor: pointer;
+  color: var(--muted);
+  font-family: inherit;
+}
+.dash-filter-chip.on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.dash-filter-chip.inert {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ---- Appointments list ---- */
+.dash-appt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.3rem;
+  margin-bottom: 0.7rem;
+  max-width: 700px;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.dash-appt-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.dash-appt-doc {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+.dash-appt-time {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.dash-status-pill {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.dash-status-pill.upcoming {
+  background: #E1EAF0;
+  color: #3A6E8F;
+}
+.dash-status-pill.progress {
+  background: #FBF3E1;
+  color: #9A7A4A;
+}
+.dash-status-pill.done {
+  background: #E9E9E9;
+  color: #7A7A7A;
+}
+.dash-status-pill.cancelled {
+  background: #F0E1E1;
+  color: #9A4A4A;
+}
+
+/* ---- Schedule timeline ---- */
+.dash-timeline-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  max-width: 700px;
+}
+.dash-timeline-time {
+  width: 70px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.dash-timeline-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--paper-card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.8rem 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.dash-timeline-card .name {
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+.dash-timeline-card .reason {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.dash-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 1rem 0;
+}
+
+/* ---- Mobile: collapse sidebar to a top bar ---- */
+@media (max-width: 700px) {
+  .dash-shell {
+    grid-template-columns: 1fr;
+  }
+  .dash-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 1rem;
+  }
+  .dash-brand {
+    margin-bottom: 0;
+    margin-right: auto;
+  }
+  .dash-sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    width: 100%;
+    order: 3;
+  }
+  .dash-nav-item {
+    width: auto;
+    flex: 1 1 auto;
+  }
+  .dash-sidebar-footer {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    order: 2;
+  }
+  .dash-sidebar-footer .who {
+    margin-bottom: 0;
+  }
+  .dash-main {
+    padding: 1.5rem;
+  }
+}
