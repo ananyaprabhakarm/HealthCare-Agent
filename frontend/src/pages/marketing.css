@@ -2,14 +2,14 @@
    can never leak into the existing dark chat app shell. */
 
 :root {
-  --ink: #16231F;
-  --paper: #F1F3EE;
-  --paper-card: #FBFCFA;
-  --teal: #2F6F62;
-  --teal-dark: #1F4F45;
-  --amber: #D9A441;
-  --line: #DCE0D8;
-  --muted: #5B6960;
+  --ink: #16231f;
+  --paper: #f1f3ee;
+  --paper-card: #fbfcfa;
+  --teal: #2f6f62;
+  --teal-dark: #1f4f45;
+  --amber: #d9a441;
+  --line: #dce0d8;
+  --muted: #5b6960;
 }
 
 .marketing * {
@@ -19,14 +19,14 @@
   min-height: 100vh;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   animation: marketing-page-in 0.32s ease-out;
 }
 @keyframes marketing-page-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -41,7 +41,7 @@
 .marketing h1,
 .marketing h2,
 .marketing h3 {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   margin: 0;
   font-weight: 500;
 }
@@ -56,7 +56,7 @@
   margin: 0 auto;
 }
 .marketing .logo {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-size: 1.15rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -178,7 +178,9 @@
   margin-bottom: 0.7rem;
   opacity: 0;
   transform: translateY(6px);
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
 }
 .marketing .bubble.visible {
   opacity: 1;
@@ -191,7 +193,7 @@
   border-bottom-right-radius: 4px;
 }
 .marketing .bubble.agent {
-  background: #E7EBE4;
+  background: #e7ebe4;
   color: var(--ink);
   border-bottom-left-radius: 4px;
 }
@@ -242,7 +244,7 @@
   background: var(--paper-card);
 }
 .marketing .panel.doctor {
-  background: #EAF1EE;
+  background: #eaf1ee;
 }
 .marketing .panel .kicker {
   font-size: 0.8rem;
@@ -396,9 +398,9 @@
   cursor: default;
 }
 .marketing .auth-error {
-  background: #FBEAEA;
-  color: #8A3B3B;
-  border: 1px solid #EFC9C9;
+  background: #fbeaea;
+  color: #8a3b3b;
+  border: 1px solid #efc9c9;
   border-radius: 0.6rem;
   padding: 0.6rem 0.8rem;
   font-size: 0.85rem;
