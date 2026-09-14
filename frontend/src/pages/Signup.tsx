@@ -19,6 +19,17 @@ export function Signup() {
   const { signup } = useAuth();
   const navigate = useNavigate();
 
+  function switchRole(newRole: Role) {
+    if (newRole === role) return;
+    setRole(newRole);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setPhone("");
+    setSpecialization("");
+    setError(null);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -57,10 +68,10 @@ export function Signup() {
           <div className="auth-subtitle">Book visits or check your schedule in plain language.</div>
 
           <div className="role-toggle">
-            <button type="button" className={role === "patient" ? "active" : ""} onClick={() => setRole("patient")}>
+            <button type="button" className={role === "patient" ? "active" : ""} onClick={() => switchRole("patient")}>
               I'm a patient
             </button>
-            <button type="button" className={role === "doctor" ? "active" : ""} onClick={() => setRole("doctor")}>
+            <button type="button" className={role === "doctor" ? "active" : ""} onClick={() => switchRole("doctor")}>
               I'm a doctor
             </button>
           </div>

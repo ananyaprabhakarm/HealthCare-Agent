@@ -21,6 +21,22 @@
   color: var(--ink);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
+  animation: marketing-page-in 0.32s ease-out;
+}
+@keyframes marketing-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marketing {
+    animation: none;
+  }
 }
 .marketing h1,
 .marketing h2,
